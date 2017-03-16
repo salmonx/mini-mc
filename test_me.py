@@ -9,7 +9,8 @@
 This resembles Section 2.4 of the DART paper (PLDI'05).
 """
 
-from mc import *
+#from mc import *
+from sched import *
 
 def test_me(x, y):
   z = 2 * x
@@ -20,4 +21,5 @@ def test_me(x, y):
 x = BitVec("x", 32)
 y = BitVec("y", 32)
 #test_me(x, y)
-mc_fuzz(lambda: test_me(x, y), [x, y], [0, 0])
+#mc_fuzz(lambda: test_me(x, y), [x, y], [0, 0])
+mc_fuzz(lambda: test_me(x, y))
