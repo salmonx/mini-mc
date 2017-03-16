@@ -19,5 +19,5 @@ def test_me(x, y):
 
 x = BitVec("x", 32)
 y = BitVec("y", 32)
-test_me(x, y)
-#mc_fuzz(lambda: test_me(x, y), [x, y], [0, 0])
+#test_me(x, y)
+mc_fuzz(lambda: test_me(x, y), [x, y], [0, 0])

@@ -26,4 +26,9 @@ mc_unsignedBitVec()
 x = BitVec("x", n)
 y = BitVec("y", n)
 # seems okay without mc_assume(y != 0)
-assert mod(x, y) == mod_opt(x, y)
+def func(x, y):
+    assert mod(x, y) == mod_opt(x, y)
+
+mc_fuzz(lambda:func(x, y), [x, y], [1, 1])
+
+#assert mod(x, y) == mod_opt(x, y)

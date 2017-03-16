@@ -21,6 +21,7 @@ def sched_fork(self):
     solver.add(Not(self))
     r = False
     mc_log("assume ¬(%s)" % (str(self),))
+  mc_log("solver: %s" % solver)
   if solver.check() != sat:
     mc_log("unreachable")
     sys.exit(0)

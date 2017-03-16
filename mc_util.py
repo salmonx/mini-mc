@@ -8,13 +8,16 @@ from z3 import *
 from multiprocessing import Lock
 import os, atexit
 
+from patch import *
+
 solver = Solver()
 lock = Lock()
 
 def mc_log(s):
   # "atomic" print; less concern about performance
   with lock:
-    print("[%s] %s" % (os.getpid(), s), file=sys.stderr)
+    print("[%s] %s" % (os.getpid(), s), file=sys.stdout)
+
 
 def mc_assume(b):
   return solver.add(b)
