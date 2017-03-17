@@ -13,33 +13,16 @@ This resembles Section 2.4 of the DART paper (PLDI'05).
 from sched import *
 
 def test_me(x, y):
-  z = 2 * x
-  if z == y:
-    if y == x + 10:
-      print "z==y, y==x+10"
-      if x > 0:
-        print "x>0"
-    else:
-      print "z==y, y!=x+10"
-  else:
-    print "z!=y"
-
-
-
-def test_me1(x, y):
 	if x > 1:
 		if y > 1:
 			if x + y > 10:
-				print " x>1, y>1, x+y>10"
+				print "x>1, y>1, x+y>10"
 			else:
-				print " x>1, y>1"
+				print "x>1, y>1, Not(x+y)>10"
+		else:
+			print "x>1, Not(y>1)"
 	else:
-		print " x<1"
-
-
-
-
-
+		print "Not(x>1)"
 
 
 x = BitVec("x", 32)

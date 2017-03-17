@@ -1,15 +1,5 @@
-# -*- coding: utf-8 -*-
-
-# Copyright (c) 2015 Xi Wang
-#
-# This file is part of the UW CSE 551 lecture code.  It is freely
-# distributed under the MIT License.
-
-# ---------------------------------------------------------------
-# symbolic
-# ---------------------------------------------------------------
-
-from mc_util import *
+#coding:utf8
+from z3 import *
 
 class ConditionTree:
 
@@ -34,9 +24,13 @@ class ConditionTree:
       tmp = tmp.parent
     return conditions
 
+solver = Solver()
+tree = ConditionTree()
+current = tree
+path = []
+counter = 0
 
 def sat_check(conditions, current_condition):
-  
   solver.push()
   for condition in conditions:
     solver.add(condition)
@@ -46,13 +40,8 @@ def sat_check(conditions, current_condition):
   return ret == sat
 
 
-tree = ConditionTree()
-current = tree
-path = []
-
-# handle __bool__ when "if"
 def handle_bool(current_condition):
-  
+  # handle __bool__ when "if"
   global counter, current
   counter += 1
   if len(path) > counter:
@@ -76,11 +65,13 @@ def handle_bool(current_condition):
   elif ret_right:
     current = current.rightchild
   return ret_left
-  
-  
+
+setattr(BoolRef, "__bool__", handle_bool)
+setattr(BoolRef, "__nonzero__", getattr(BoolRef, "__bool__"))
 
 
 def newpos():
+  #when func run over, move to the other leaf node
   global current
   while current:
     if current.parent and current.parent.rightchild and \
@@ -91,50 +82,75 @@ def newpos():
       current = current.parent
   return current
 
-
 def gen_path():
+  #collect conditions from current to root to generate a path
   global path
   path = []
   tmp = current
-
-  if tmp.condition is None:
-    print "reach root"
-    return False
 
   while tmp:
     path.append(tmp.condition)
     tmp = tmp.parent
 
   path = path[::-1]
-  
-
   path = path[1:]
-  print "path:", path
+
   return True
 
-counter = 0
-#dfs search the tree
-def sched(func, init=True):
+def out(firstrun, ret):
+
+  solver.push()
+  if firstrun:
+    gen_path()
+  print "PATH:", path
+  for condition in path:
+    solver.add(condition)
+  
+  if solver.check() == sat:
+      print "INPUT:", solver.model()
+  solver.pop()
+  if ret:
+    print "RET:", ret
+
+
+def sched(func, firstrun=True):
+ # run untill all branches reached
   global counter
-  counter = 0
-  print "-----------------------START-------------------------------"
-  
-  if not init:
-    if not newpos():
-      return
+  while True:
+    counter = 0
+    if not firstrun:
+      if not newpos():
+        return
+      if not gen_path():
+        return
 
-    if not gen_path():
-      return 
-  
-  try:
-    func()
-  except:
-    print "err"
-    pass
-    #typ, value, tb = sys.exc_info()
-    #sys.excepthook(typ, value, tb.tb_next)
-  sched(func, False)
+    print "--------------------------START-------------------------------"
+    try:
+      ret = func()
+      out(firstrun, ret)
+    except:
+      #pass
+      typ, value, tb = sys.exc_info()
+      sys.excepthook(typ, value, tb.tb_next)
 
- 
-setattr(BoolRef, "__bool__", handle_bool)
-setattr(BoolRef, "__nonzero__", getattr(BoolRef, "__bool__"))
+    firstrun = False
+
+
+
+def test_me(x, y):
+  if x > 1:
+    if y > 1:
+      if x + y > 10:
+        print "x>1, y>1, x+y>10"
+      else:
+        print "x>1, y>1, Not(x+y)>10"
+    else:
+      print "x>1, Not(y>1)"
+  else:
+    print "Not(x>1)"
+
+x = BitVec("x", 32)
+y = BitVec("y", 32)
+
+if __name__ == '__main__':
+  sched(lambda: test_me(x, y))
