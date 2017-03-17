@@ -75,4 +75,4 @@ def mc_exit():
     pass
   mc_log("exit")
 
-atexit.register(mc_exit)
+#atexit.register(mc_exit)

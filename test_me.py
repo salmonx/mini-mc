@@ -16,10 +16,34 @@ def test_me(x, y):
   z = 2 * x
   if z == y:
     if y == x + 10:
-      assert False
+      print "z==y, y==x+10"
+      if x > 0:
+        print "x>0"
+    else:
+      print "z==y, y!=x+10"
+  else:
+    print "z!=y"
+
+
+
+def test_me1(x, y):
+	if x > 1:
+		if y > 1:
+			if x + y > 10:
+				print " x>1, y>1, x+y>10"
+			else:
+				print " x>1, y>1"
+	else:
+		print " x<1"
+
+
+
+
+
+
 
 x = BitVec("x", 32)
 y = BitVec("y", 32)
 #test_me(x, y)
 #mc_fuzz(lambda: test_me(x, y), [x, y], [0, 0])
-mc_fuzz(lambda: test_me(x, y))
+sched(lambda: test_me(x, y))

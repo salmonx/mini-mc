@@ -11,122 +11,130 @@
 
 from mc_util import *
 
-class CondtionsTree:
+class ConditionTree:
 
-  def __init__(self, condtion, parent=None):
+  def __init__(self, condition=None, parent=None):
     #self.traced = False
     self.parent = parent
-    self.condtion = condtion
+    self.condition = condition
     self.leftchild = None
-    self.rigntchild = None
+    self.rightchild = None
 
   def addLeftchild(self, child):
-    self.leftchild  = child
+    self.leftchild  = ConditionTree(child, self)
 
   def addRightchild(self, child):
-    self.rigntchild = child
+    self.rightchild = ConditionTree(child, self)
 
   def getCondtions(self):
-    condtions = []
-    while self.parent:
-      tmp = self.parent
-      condtions.append(tmp.condtion)
+    conditions = []
+    tmp = self
+    while tmp.parent:
+      conditions.append(tmp.condition)
+      tmp = tmp.parent
+    return conditions
 
-    return condtions
 
-
-
-def sat_check(condtions, current_condtion):
+def sat_check(conditions, current_condition):
   
   solver.push()
-  for condtion in condtions:
-    solver.add(condtion)
-  solver.add(current_condtion)
+  for condition in conditions:
+    solver.add(condition)
+  solver.add(current_condition)
   ret = solver.check()
   solver.pop()
   return ret == sat
 
 
-
-tree = CondtionsTree()
+tree = ConditionTree()
 current = tree
-
+path = []
 
 # handle __bool__ when "if"
-def handle_bool(current_condtion):
+def handle_bool(current_condition):
+  
+  global counter, current
+  counter += 1
+  if len(path) > counter:
+    if str(path[counter-1]) == str(current_condition):
+      return True
+    else: # path[counter] == not current_condition:
+      return False
 
-  condtions = current.getCondtions()
-
-  ret_left = sat_check(condtions, current_condtion)
+  conditions = current.getCondtions()
+  ret_left = sat_check(conditions, current_condition)
   if ret_left:
-    current.addLeftchild(current_condtion)
+    current.addLeftchild(current_condition)
 
-  neg_condtion = not current_condtion
-  ret_right = sat_check(condtions, neg_condtion):
+  neg_condition = Not(current_condition)
+  ret_right = sat_check(conditions, neg_condition)
   if ret_right:
-    current.addRightchild(neg_condtion)
+    current.addRightchild(neg_condition)
 
   if ret_left:
     current = current.leftchild
   elif ret_right:
-    current = current.rigntchild
+    current = current.rightchild
   return ret_left
+  
+  
 
 
+def newpos():
+  global current
+  while current:
+    if current.parent and current.parent.rightchild and \
+      current.parent.rightchild != current:
+      current = current.parent.rightchild
+      break
+    else:
+      current = current.parent
+  return current
 
+
+def gen_path():
+  global path
+  path = []
+  tmp = current
+
+  if tmp.condition is None:
+    print "reach root"
+    return False
+
+  while tmp:
+    path.append(tmp.condition)
+    tmp = tmp.parent
+
+  path = path[::-1]
+  
+
+  path = path[1:]
+  print "path:", path
+  return True
+
+counter = 0
 #dfs search the tree
-def sched():
+def sched(func, init=True):
+  global counter
+  counter = 0
+  print "-----------------------START-------------------------------"
   
+  if not init:
+    if not newpos():
+      return
+
+    if not gen_path():
+      return 
   
+  try:
+    func()
+  except:
+    print "err"
+    pass
+    #typ, value, tb = sys.exc_info()
+    #sys.excepthook(typ, value, tb.tb_next)
+  sched(func, False)
 
-
-
-
-
-
-
-
-
-
-
-
-
+ 
 setattr(BoolRef, "__bool__", handle_bool)
 setattr(BoolRef, "__nonzero__", getattr(BoolRef, "__bool__"))
-
-
-
-def mc_fuzz(f, cnt = 0):
-
-  trace = []
-  setattr(BoolRef, "__bool__", lambda self: sched_dfs(self, trace))
-  setattr(BoolRef, "__nonzero__", getattr(BoolRef, "__bool__"))
-
-  try:
-    f()
-  except:
-    typ, value, tb = sys.exc_info()
-    sys.excepthook(typ, value, tb.tb_next)
-
-  delattr(BoolRef, "__bool__")
-  delattr(BoolRef, "__nonzero__")
-
-  # this path done
-  if trace:
-    solver.add(Not(And(*trace)))
-
-  # choose a new path
-  while trace:
-    solver.push()
-    solver.add(Not(trace[-1]))
-    trace = trace[:-1]
-    solver.add(*trace)
-    r = solver.check()
-    solver.pop()
-    if r == sat:
-      m = solver.model()
-      print m
-      cnt = mc_fuzz(f, cnt + 1)
-
-  return cnt
-
