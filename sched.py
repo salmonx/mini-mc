@@ -80,6 +80,7 @@ def newpos():
       break
     else:
       current = current.parent
+      
   return current
 
 def gen_path():
@@ -87,11 +88,9 @@ def gen_path():
   global path
   path = []
   tmp = current
-
   while tmp:
     path.append(tmp.condition)
     tmp = tmp.parent
-
   path = path[::-1]
   path = path[1:]
 
